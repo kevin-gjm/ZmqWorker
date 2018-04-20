@@ -1,0 +1,16 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+stages:
+    - build
+    - upload
+build_job:
+  stage: build
+  script:
+    - sh ./build.sh
+deploy_job:
+  stage: upload
+  script:
+    - sh ./build.sh
+    - sh ./upload.sh
+  only:
+    - tags
