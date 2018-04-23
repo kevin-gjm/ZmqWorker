@@ -1,14 +1,13 @@
 #include "zmq_server.h"
 #include <vector>
 #include <exception>
-#if (!defined (WIN32))
 #include <sys/time.h>
-#endif
+
 
 using namespace  std;
 
 #define UNKNOWN_REPLY -1
-#define HEARTBEAT_LIVENESS  3               //  3-5 is reasonable
+#define HEARTBEAT_LIVENESS  5               //  3-5 is reasonable
 #define HEARTBEAT_INTERVAL  1000            //  msecs
 #define HEARTBEAT_KEY       "HEARTBEAT"
 #define INTERVAL_INIT       1000
@@ -19,15 +18,9 @@ string g_sError;
 
 static int64_t s_clock (void)
 {
-#if (defined (WIN32))
-    SYSTEMTIME st;
-    GetSystemTime (&st);
-    return (int64_t) st.wSecond * 1000 + st.wMilliseconds;
-#else
     struct timeval tv;
-    gettimeofday (&tv, NULL);
-    return (int64_t) (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-#endif
+    gettimeofday(&tv,NULL);
+    return  tv.tv_sec;
 }
 
 
@@ -64,7 +57,7 @@ void Server::Start(int thread_count)
             { *sock_, 0, ZMQ_POLLIN, 0 },
             { *proxy_sock_, 0, ZMQ_POLLIN, 0 },
         };
-        rc = zmq::poll(pollitems, 2,HEARTBEAT_INTERVAL*ZMQ_POLL_MSEC);
+        rc = zmq::poll(pollitems, 2,HEARTBEAT_INTERVAL);
         if (rc == -1)
         {
             LOG(ERROR)<<"Get Poll error.exit;";
@@ -89,6 +82,7 @@ void Server::Start(int thread_count)
                 if(data==HEARTBEAT_KEY)
                 {
                     liveness = HEARTBEAT_LIVENESS;
+                    LOG(INFO)<<"recv heartbeat!";
                 }
             }
             interval = INTERVAL_INIT;
